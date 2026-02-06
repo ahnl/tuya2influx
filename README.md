@@ -5,7 +5,7 @@ A Node.js script to pull temperature, humidity, and battery sensor readings from
 ## Supported devices
 
 - Tuya TH02 Wi-Fi (001TH02T1-3S)
-    - can be ordered from China for approx €2.80 per piece
+    - [can be ordered from China for approx €2.80 per piece (AliExpress)](https://s.click.aliexpress.com/e/_EG7KQjK)
 
 - *Please add your tested unit*
 
