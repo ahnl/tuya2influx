@@ -1,0 +1,23 @@
+{
+  "name": "tuya2influx",
+  "version": "1.0.0",
+  "description": "Pull temperature, humidity, and battery readings from Tuya Cloud API and insert into InfluxDB2",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js"
+  },
+  "keywords": [
+    "tuya",
+    "influxdb",
+    "sensors",
+    "iot",
+    "cloud-api"
+  ],
+  "author": "https://github.com/ahnl",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "@influxdata/influxdb-client": "^1.33.2"
+  }
+}
