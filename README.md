@@ -2,6 +2,11 @@
 
 A Node.js script to pull temperature, humidity, and battery sensor readings from Tuya Cloud API and insert them into InfluxDB2.
 
+<figure>
+    <img src="https://github.com/user-attachments/assets/d2bfc166-29ad-4610-a3a1-71f56b4621f2">
+    <figcaption><i>Sample Grafana dashboard displaying Tuya TH02 sensor data extracted via Tuya2Influx</i></figcaption>
+</figure>
+
 ## Supported devices
 
 - Tuya TH02 Wi-Fi (001TH02T1-3S)
@@ -75,12 +80,12 @@ To run this script periodically, add a cron job:
 crontab -e
 ```
 
-Add a line to run every 5 minutes:
+Add a line to run every 10 minutes:
 ```
-*/5 * * * * cd /path/to/tuya2influx && /usr/bin/node index.js >> /var/log/tuya2influx.log 2>&1
+*/10 * * * * cd /path/to/tuya2influx && /usr/bin/node index.js >> /var/log/tuya2influx.log 2>&1
 ```
 
-Or every hour (Tuya TH02 has 1 hour interval for data):
+Or every hour:
 ```
 0 * * * * cd /path/to/tuya2influx && /usr/bin/node index.js >> /var/log/tuya2influx.log 2>&1
 ```
