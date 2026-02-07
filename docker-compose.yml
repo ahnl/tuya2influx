@@ -14,3 +14,24 @@ services:
     volumes:
       - ./influxdb-data:/var/lib/influxdb2
 
+  questdb:
+    image: questdb/questdb:latest
+    container_name: questdb
+    ports:
+      - "${QUESTDB_HTTP_PORT:-9000}:9000"
+      - "${QUESTDB_ILP_PORT:-9009}:9009"
+    volumes:
+      - ./questdb-data:/var/lib/questdb
+
+
+  cube: 
+    container_name: cube
+    environment: 
+      - CUBEJS_DEV_MODE=true
+    image: cubejs/cube:latest
+    ports: 
+      - "${CUBE_HTTP_PORT:-4000}:4000"
+    volumes: 
+      - "./cube:/cube/conf"
+    depends_on:
+      - questdb

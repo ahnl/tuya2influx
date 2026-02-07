@@ -1,5 +1,6 @@
 const TuyaClient = require('./tuya-client');
 const InfluxDBClient = require('./influxdb-client');
+const QuestDBClient = require('./questdb-client');
 const dotenv = require('dotenv');
 
 dotenv.config();
@@ -12,11 +13,15 @@ const config = {
   deviceIds: process.env.TUYA_DEVICE_IDS ? process.env.TUYA_DEVICE_IDS.split(',').map(id => id.trim()) : []
 };
 
+const writeDb = (process.env.WRITE_DB || 'influxdb').toLowerCase().split(',').map(s => s.trim());
 const influxConfig = {
   url: process.env.INFLUXDB_URL || 'http://localhost:8086',
   token: process.env.INFLUXDB_TOKEN,
   org: process.env.INFLUXDB_ORG || 'default',
   bucket: process.env.INFLUXDB_BUCKET || 'tuya'
+};
+const questdbConfig = {
+  url: process.env.QUESTDB_URL || 'http://localhost:9000'
 };
 
 if (!config.clientId || !config.clientSecret) {
@@ -29,8 +34,8 @@ if (!config.deviceIds || config.deviceIds.length === 0) {
   process.exit(1);
 }
 
-if (!influxConfig.token) {
-  console.error('Error: INFLUXDB_TOKEN must be set in .env file');
+if (writeDb.includes('influxdb') && !influxConfig.token) {
+  console.error('Error: INFLUXDB_TOKEN must be set when WRITE_DB includes influxdb');
   process.exit(1);
 }
 
@@ -41,7 +46,8 @@ async function main() {
   console.log(`Device IDs: ${config.deviceIds.join(', ')}\n`);
 
   const client = new TuyaClient(config);
-  const influxClient = new InfluxDBClient(influxConfig);
+  const influxClient = writeDb.includes('influxdb') ? new InfluxDBClient(influxConfig) : null;
+  const questdbClient = writeDb.includes('questdb') ? new QuestDBClient(questdbConfig) : null;
 
   try {
     console.log('Authenticating...');
@@ -59,35 +65,22 @@ async function main() {
     console.log('Fetching device data...\n');
     const results = await client.fetchMultipleDevices(config.deviceIds);
 
-    const output = {
-      timestamp: new Date().toISOString(),
-      devices: results.map(result => ({
-        deviceId: result.deviceId,
-        success: result.success,
-        ...(result.success ? {
-          temperature: result.data.temperature,
-          humidity: result.data.humidity,
-          battery: result.data.battery,
-          timestamp: result.data.timestamp
-        } : {
-          error: result.error
-        })
-      }))
-    };
+    const summary = results.map((r) =>
+      r.success
+        ? { deviceId: r.deviceId, success: true, ...r.data }
+        : { deviceId: r.deviceId, success: false, error: r.error }
+    );
+    console.log(JSON.stringify(summary, null, 2));
 
-    console.log(JSON.stringify(output, null, 2));
+    if (influxClient) {
+      const writeResults = await influxClient.writeMultipleDevices(results, deviceNames);
+      console.log('InfluxDB write results:', writeResults);
+    }
 
-    console.log('\nWriting to InfluxDB...');
-    const writeResults = await influxClient.writeMultipleDevices(results, deviceNames);
-
-    console.log('\nInfluxDB Write Results:');
-    writeResults.forEach(result => {
-      if (result.written) {
-        console.log(`  ${result.deviceId}: written`);
-      } else {
-        console.log(`  ${result.deviceId}: ${result.reason}${result.error ? ` (${result.error})` : ''}`);
-      }
-    });
+    if (questdbClient) {
+      const writeResults = await questdbClient.writeMultipleDevices(results, deviceNames);
+      console.log('QuestDB write results:', writeResults);
+    }
 
     process.exit(0);
   } catch (error) {
